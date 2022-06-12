@@ -28,7 +28,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/new" element={<New />} />
           <Route path="/edit" element={<Edit />} />
-          <Route path="/diary" element={<Diary />} />
+          <Route path="/diary/:id" element={<Diary />} />
+          {/* Path Variable 사용 (useParams). 여기서 path variable을 id라고 부르기로 한 것 */}
         </Routes>
         <RouteTest />
       </div>
