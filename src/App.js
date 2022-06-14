@@ -1,3 +1,4 @@
+import React, { useReducer, useRef } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './App.css';
 import MyButton from './components/MyButton';
@@ -19,11 +20,82 @@ import New from './pages/New';
 
 // 리액트는 SPA와 CSR 방식
 
+const reducer = (state, action) => {
+  let newState = [];
+  switch (action.type) {
+    case 'INIT': {
+      return action.data;
+    }
+    case 'CREATE': {
+      newState = [...action.data, ...state];
+      break;
+    }
+    case 'REMOVE': {
+      newState = state.filter((it) => it.id !== action.targetId);
+      break;
+    }
+    case 'EDIT': {
+      newState = state.map((it) =>
+        it.id === action.data.id ? { ...action.data } : it
+      );
+      break;
+    }
+    default:
+      return state;
+  }
+  return newState;
+};
+
+export const DiaryStateContext = React.createContext();
+// 상태관리 로직에 context를 만들어서, data state를 컴포넌트 트리 전역에 공급하기
+export const DiaryDispatchContext = React.createContext();
+// dispatch 함수를 context를 생성해서 공급하기
+
 function App() {
+  const [data, dispatch] = useReducer(reducer, []);
+
+  const dataId = useRef(0);
+
+  // CREATE
+  const onCreate = (date, content, emotion) => {
+    dispatch({
+      type: 'CREATE',
+      data: {
+        id: dataId.current,
+        data: new Date(date).getTime(),
+        content,
+        emotion,
+      },
+    });
+    dataId.current += 1;
+  };
+
+  // REMOVE
+  const onRemove = (targetId) => {
+    dispatch({ type: 'REMOVE', targetId });
+  };
+
+  // EDIT
+  const onEdit = (targetId, date, content, emotion) => {
+    dispatch({
+      type: 'EDIT',
+      data: {
+        id: targetId,
+        date: new Date(date).getTime(),
+        content,
+        emotion,
+      },
+    });
+  };
+
   return (
-    <BrowserRouter>
-      <div className="App">
-        <MyHeader
+    <DiaryStateContext.Provider value={data}>
+      {/* App 컴포넌트의 data state 값을 value로 공급 */}
+      <DiaryDispatchContext.Provider value={{ onCreate, onEdit, onRemove }}>
+        {/* data state를 변화시킬 수 있는 dispatch 함수들을 객체로 공급 */}
+        <BrowserRouter>
+          <div className="App">
+            {/* <MyHeader
           headText={'App'}
           leftChild={
             <MyButton text={'왼쪽 버튼'} onClick={() => alert('왼쪽 클릭')} />
@@ -35,18 +107,18 @@ function App() {
             />
           }
           // 컴포넌트 자체를 props로 전달 -> 전달되는 props의 개수를 줄일 수 있음
-        />
-        <h2>App.js</h2>
-        {/* 모든 페이지에서 보여야 하는 요소는 <Routes> 바깥에 배치 */}
+        /> */}
 
-        {/* <img src={process.env.PUBLIC_URL + `/assets/emotion1.png`} />
+            {/* 모든 페이지에서 보여야 하는 요소는 <Routes> 바깥에 배치 */}
+
+            {/* <img src={process.env.PUBLIC_URL + `/assets/emotion1.png`} />
         <img src={process.env.PUBLIC_URL + `/assets/emotion2.png`} />
         <img src={process.env.PUBLIC_URL + `/assets/emotion3.png`} />
         <img src={process.env.PUBLIC_URL + `/assets/emotion4.png`} />
         <img src={process.env.PUBLIC_URL + `/assets/emotion5.png`} /> */}
-        {/* process.env.PUBLIC_URL은 지금 어느 폴더에 있든 public에 있는 것처럼 경로를 설정할 수 있게 해줌 */}
+            {/* process.env.PUBLIC_URL은 지금 어느 폴더에 있든 public에 있는 것처럼 경로를 설정할 수 있게 해줌 */}
 
-        <MyButton
+            {/* <MyButton
           text={'버튼'}
           onClick={() => alert('버튼 클릭')}
           type={'positive'}
@@ -56,16 +128,19 @@ function App() {
           onClick={() => alert('버튼 클릭')}
           type={'negative'}
         />
-        <MyButton text={'버튼'} onClick={() => alert('버튼 클릭')} />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/new" element={<New />} />
-          <Route path="/edit" element={<Edit />} />
-          <Route path="/diary/:id" element={<Diary />} />
-          {/* Path Variable 사용 (useParams). 여기서 path variable을 id라고 부르기로 한 것 */}
-        </Routes>
-      </div>
-    </BrowserRouter>
+        <MyButton text={'버튼'} onClick={() => alert('버튼 클릭')} /> */}
+
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/new" element={<New />} />
+              <Route path="/edit" element={<Edit />} />
+              <Route path="/diary/:id" element={<Diary />} />
+              {/* Path Variable 사용 (useParams). 여기서 path variable을 id라고 부르기로 한 것 */}
+            </Routes>
+          </div>
+        </BrowserRouter>
+      </DiaryDispatchContext.Provider>
+    </DiaryStateContext.Provider>
   );
 }
 
